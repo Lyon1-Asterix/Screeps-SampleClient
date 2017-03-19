@@ -1,0 +1,9 @@
+[submodule "external/ScreepsApi"]
+	path = external/ScreepsApi
+	url = https://github.com/Lyon1-Asterix/ScreepsApi.git
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "external/Simple-Web-Server"]
+	path = external/Simple-Web-Server
+	url = https://github.com/eidheim/Simple-Web-Server.git
