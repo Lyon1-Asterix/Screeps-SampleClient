@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 
+#include <dlfcn.h>
+
 #include "ScreepsApi/ApiManager.hpp"
 #include "ScreepsApi/Web.hpp"
 
@@ -69,6 +71,12 @@ int main ( int argc, char** argv )
         std::cerr << "Usage: " << argv [ 0 ] << " apilibrary username password" << std::endl;
         exit ( -1 );
     }
+    void* apiHandle = dlopen(argv[1], RTLD_GLOBAL);
+    if ( ! apiHandle )
+    {
+        std::cerr << "cant open " << argv[1] << "library : " << dlerror () << std::endl;
+        exit ( -1 );
+    }
     std::shared_ptr < ScreepsApi::Web::Client > web ( new WebClient ( "localhost:21025" ) );
     
     ScreepsApi::ApiManager::Instance ().initialize ( web );
@@ -77,5 +85,6 @@ int main ( int argc, char** argv )
 
     bool ok = client->Signin ( argv[ 2 ], argv [ 3 ] );
     std::cout << "signed in " << ok << std::endl;
+
     return 0;
 }
