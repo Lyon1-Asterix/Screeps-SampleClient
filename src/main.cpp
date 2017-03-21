@@ -85,7 +85,7 @@ int main ( int argc, char** argv )
 
     std::shared_ptr < ScreepsApi::Api > client = ScreepsApi::ApiManager::Instance ().getApi ();
 
-    bool ok = client->Signin ( argv[ 2 ], argv [ 3 ] );
+    bool ok = client->Signin ( argv[ 1 ], argv [ 2 ] );
     std::cout << "signed in " << ok << std::endl;
 
     return 0;
