@@ -6,7 +6,7 @@
 #include "ScreepsApi/ApiManager.hpp"
 #include "ScreepsApi/Web.hpp"
 
-#include "client_http.hpp"
+#include "simple-web-server/client_http.hpp"
 
 /*
  *
@@ -66,17 +66,19 @@ protected:
 
 int main ( int argc, char** argv )
 {
-    if ( argc != 4 )
+    if ( argc != 3 )
     {
-        std::cerr << "Usage: " << argv [ 0 ] << " apilibrary username password" << std::endl;
+        std::cerr << "Usage: " << argv [ 0 ] << " username password" << std::endl;
         exit ( -1 );
     }
+    /*
     void* apiHandle = dlopen(argv[1], RTLD_GLOBAL);
     if ( ! apiHandle )
     {
         std::cerr << "cant open " << argv[1] << "library : " << dlerror () << std::endl;
         exit ( -1 );
     }
+    */
     std::shared_ptr < ScreepsApi::Web::Client > web ( new WebClient ( "localhost:21025" ) );
     
     ScreepsApi::ApiManager::Instance ().initialize ( web );

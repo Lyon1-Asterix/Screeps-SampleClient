@@ -8,16 +8,32 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# JSON
-include_directories(external/json/src)
+find_package ( nlohmann_json REQUIRED
+        NO_CMAKE_PACKAGE_REGISTRY
+        NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+)
+include_directories(${JSON_INCLUDE_DIR})
 
-add_subdirectory ( external/ScreepsApi )
+find_package ( Simple-Web-Server REQUIRED
+        NO_CMAKE_PACKAGE_REGISTRY
+        NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+)
+include_directories(${SimpleWebServer_INCLUDE_DIRS})
 
-# ScreepsApi
-include_directories(external/ScreepsApi/include)
+find_package ( ScreepsApi REQUIRED
+        NO_CMAKE_PACKAGE_REGISTRY
+        NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+)
+include_directories(${ScreepsApi_INCLUDE_DIRS})
 
-# Web
-include_directories(external/Simple-Web-Server)
+find_package ( ScreepsApiV12 REQUIRED
+        NO_CMAKE_PACKAGE_REGISTRY
+        NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+)
+include_directories(${ScreepsApiV12_INCLUDE_DIRS})
+
+link_directories ( ${ScreepsApi_LIBRARY_DIRS} )
+link_directories ( ${ScreepsApiV12_LIBRARY_DIRS} )
 
 set(BOOST_COMPONENTS system thread filesystem date_time coroutine context)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -49,7 +65,10 @@ include_directories("${PROJECT_INCLUDE_DIR}")
 add_executable ( ${PROJECT_NAME} ${PROJECT_SRCS} )
 
 target_link_libraries ( ${PROJECT_NAME} ScreepsApi )
+target_link_libraries ( ${PROJECT_NAME} ScreepsApiV12 )
 
 target_link_libraries ( ${PROJECT_NAME} ${Boost_LIBRARIES} )
 target_link_libraries ( ${PROJECT_NAME} ${OPENSSL_CRYPTO_LIBRARY} )
 target_link_libraries ( ${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
