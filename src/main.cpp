@@ -158,8 +158,10 @@ nlohmann::json gPullOptions = {
         } }
     };
 
-nlohmann::json gPullCommand = {
+nlohmann::json gPullCommandDef = {
         { "name", "pull" },
+        { "type", "system" },
+        { "processor", "Pull" },
         { "help", "retrieve code modules for specific branch on the server and save them locally" }
     };
 
@@ -208,11 +210,69 @@ nlohmann::json gPushOptions = {
         } }
     };
 
-nlohmann::json gPushCommand = {
+nlohmann::json gPushCommandDef = {
         { "name", "push" },
+        { "type", "system" },
+        { "processor", "Push" },
         { "help", "retrieve code modules locally and push them on the server" }
     };
 
+nlohmann::json gConsoleOptions = {
+        { "command", {
+            { "short", "c" },
+            { "long", "command" },
+            { "type", "string" },
+            { "optional", false },
+            { "help", "command to run on the server" },
+            { "value", {
+                { "required", true }
+            } }
+        } }
+    };
+nlohmann::json gConsoleCommandDef = {
+        { "name", "console" },
+        { "type", "system" },
+        { "processor", "Console" },
+        { "help", "send javascript code to the server" }
+    };
+
+nlohmann::json gPlaceSpawnOptions = {
+        { "room", {
+            { "short", "r" },
+            { "long", "room" },
+            { "type", "string" },
+            { "optional", false },
+            { "help", "name of the room where to place the spawn" },
+            {"value", {
+                { "required", true }
+            } }
+        } },
+        { "posX", {
+            { "short", "x" },
+            { "type", "int" },
+            { "optional", false },
+            { "help", "X coordinate of the new spawn" },
+            { "value", {
+                { "required", true }
+            } }
+        } },
+        { "posY", {
+            { "short", "y" },
+            { "type", "int" },
+            { "optional", false },
+            { "help", "Y coordinate of the new spawn" },
+            { "value", {
+                { "required", true }
+            } }
+        } }
+    };
+
+nlohmann::json gPlaceSpawnCommandDef = {
+        { "name", "spawn" },
+        { "type", "system" },
+        { "processor", "Spawn" },
+        { "help", "send javascript code to place a spawn" }
+    };
 class ServerOptions : public ArgumentParser
 {
 public:
@@ -224,7 +284,7 @@ public:
 class Pull : public Command
 {
 public:
-    Pull () : Command (gPullCommand,gPullOptions)
+    Pull () : Command (gPullCommandDef,gPullOptions)
     {
     }
     virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
@@ -262,7 +322,7 @@ public:
 class Push : public Command
 {
 public:
-    Push () : Command (gPushCommand,gPushOptions)
+    Push () : Command (gPushCommandDef,gPushOptions)
     {
     }
     virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
@@ -336,6 +396,43 @@ public:
     }
 };
 
+class Console : public Command
+{
+public:
+    Console () : Command (gConsoleCommandDef,gConsoleOptions)
+    {
+    }
+    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
+    {
+        bool ok = client->Console ( args["command"].get<std::string> () );
+        if ( ! ok )
+        {
+            error ( "command execution thrown an error" );
+        }
+    }
+};
+
+class AddSpawn : public Command
+{
+public:
+    AddSpawn () : Command (gPlaceSpawnCommandDef,gPlaceSpawnOptions)
+    {
+    }
+    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
+    {
+        bool ok = client->AddSpawn ( args["room"].get<std::string> (),args["posX"].get<std::string> (),args["posY"].get<std::string> () );
+        if ( ! ok )
+        {
+            error ( "command execution thrown an error" );
+        }
+    }
+};
+
+Push gPushCommand;
+Pull gPullCommand;
+Console gConsoleCommand;
+AddSpawn gAddSpawnCommand;
+
 int main ( int argc, char** argv )
 {
     int index = 1;
@@ -357,15 +454,23 @@ int main ( int argc, char** argv )
     std::string command = argv [ index ]; index ++;
     if ( command == "pull" )
     {
-        Pull cmd;
-        Command::Arguments args = cmd.parseArgs ( index, argc, argv );
-        cmd.process (client, args);
+        Command::Arguments args = gPullCommand.parseArgs ( index, argc, argv );
+        gPullCommand.process (client, args);
     }
     else if ( command == "push" )
     {
-        Push cmd;
-        Command::Arguments args = cmd.parseArgs ( index, argc, argv );
-        cmd.process (client, args);
+        Command::Arguments args = gPushCommand.parseArgs ( index, argc, argv );
+        gPushCommand.process (client, args);
+    }
+    else if ( command == "console" )
+    {
+        Command::Arguments args = gConsoleCommand.parseArgs ( index, argc, argv );
+        gConsoleCommand.process (client, args);
+    }
+    else if ( command == "spawn" )
+    {
+        Command::Arguments args = gAddSpawnCommand.parseArgs ( index, argc, argv );
+        gAddSpawnCommand.process (client, args);
     }
     return 0;
 }
