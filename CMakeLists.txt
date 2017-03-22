@@ -35,6 +35,8 @@ include_directories(${ScreepsApiV12_INCLUDE_DIRS})
 link_directories ( ${ScreepsApi_LIBRARY_DIRS} )
 link_directories ( ${ScreepsApiV12_LIBRARY_DIRS} )
 
+find_package(Threads REQUIRED)
+
 set(BOOST_COMPONENTS system thread filesystem date_time coroutine context)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
@@ -70,5 +72,6 @@ target_link_libraries ( ${PROJECT_NAME} ScreepsApiV12 )
 target_link_libraries ( ${PROJECT_NAME} ${Boost_LIBRARIES} )
 target_link_libraries ( ${PROJECT_NAME} ${OPENSSL_CRYPTO_LIBRARY} )
 target_link_libraries ( ${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+target_link_libraries ( ${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
