@@ -30,6 +30,12 @@ find_package ( Simple-Web-Server REQUIRED
 )
 include_directories(${SimpleWebServer_INCLUDE_DIRS})
 
+find_package ( Simple-WebSocket-Server REQUIRED
+        NO_CMAKE_PACKAGE_REGISTRY
+        NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+)
+include_directories(${SimpleWebsocketServer_INCLUDE_DIRS})
+
 find_package ( ScreepsApi REQUIRED
         NO_CMAKE_PACKAGE_REGISTRY
         NO_CMAKE_SYSTEM_PACKAGE_REGISTRY

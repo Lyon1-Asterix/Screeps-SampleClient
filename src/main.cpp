@@ -8,6 +8,7 @@
 #include "ScreepsApi/Web.hpp"
 
 #include "simple-web-server/client_http.hpp"
+#include "simple-websocket-server/client_ws.hpp"
 
 #include "nlohmann/json.hpp"
 
@@ -54,6 +55,14 @@ class WebClient : public ScreepsApi::Web::Client
 {
 public:
     WebClient ( std::string host_port ) : m_web ( host_port ) {}
+    virtual void connect ()
+    {
+        m_web.connect ();
+    }
+    virtual void close()
+    {
+        m_web.close ();
+    }
     virtual ScreepsApi::Web::Reply request ( ScreepsApi::Web::RoutingMethod method, std::string uri, std::string content = "", ScreepsApi::Web::Header header = ScreepsApi::Web::Header () )
     {
         ScreepsApi::Web::Reply out;
@@ -81,6 +90,31 @@ public:
     }
 protected:
     SimpleWeb::Client<SimpleWeb::HTTP> m_web;
+};
+
+class WebsocketClient : public ScreepsApi::Web::Socket
+{
+public:
+    WebsocketClient ( std::string host_port_path ) : m_socket ( host_port_path ) {}
+    virtual void connect ()
+    {
+        m_socket.start ();
+    }
+    virtual void close()
+    {
+        m_socket.stop ();
+    }
+    virtual ScreepsApi::Web::Reply send ( std::string message )
+    {
+    }
+    virtual void subscribe ( std::string message, std::function<void(ScreepsApi::Web::Reply)> callback )
+    {
+    }
+    virtual void unsubscribe ( std::string message, std::function<void(ScreepsApi::Web::Reply)> callback )
+    {
+    }
+protected:
+    SimpleWeb::SocketClient<SimpleWeb::WS> m_socket;
 };
 
 /*
