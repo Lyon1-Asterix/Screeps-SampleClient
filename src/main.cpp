@@ -13,7 +13,8 @@
 
 #include "nlohmann/json.hpp"
 
-#include "Command.hpp"
+#include "ProgramApi/ArgumentParser.hpp"
+#include "ProgramApi/Command.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -291,21 +292,21 @@ nlohmann::json gPlaceSpawnCommandDef = {
         { "processor", "Spawn" },
         { "help", "send javascript code to place a spawn" }
     };
-class ServerOptions : public ArgumentParser
+class ServerOptions : public ProgramApi::ArgumentParser
 {
 public:
-    ServerOptions () : ArgumentParser (gServerOptions)
+    ServerOptions () : ProgramApi::ArgumentParser (gServerOptions)
     {
     }
 };
 
-class Pull : public Command
+class Pull : public ProgramApi::Command
 {
 public:
-    Pull () : Command (gPullCommandDef,gPullOptions)
+    Pull () : ProgramApi::Command (gPullCommandDef,gPullOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
+    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
     {
         fs::path directory = args["output"].get<std::string> ();
         if (fs::exists(directory))
@@ -338,13 +339,13 @@ public:
     }
 };
 
-class Push : public Command
+class Push : public ProgramApi::Command
 {
 public:
-    Push () : Command (gPushCommandDef,gPushOptions)
+    Push () : ProgramApi::Command (gPushCommandDef,gPushOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
+    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
     {
         fs::path directory = args["input"].get<std::string> ();
         if (!fs::exists(directory)) error ( "specified input does not exists" );
@@ -407,13 +408,13 @@ public:
     }
 };
 
-class Console : public Command
+class Console : public ProgramApi::Command
 {
 public:
-    Console () : Command (gConsoleCommandDef,gConsoleOptions)
+    Console () : ProgramApi::Command (gConsoleCommandDef,gConsoleOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
+    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
     {
         bool ok = client->Console ( args["command"].get<std::string> () );
         if ( ! ok )
@@ -423,13 +424,13 @@ public:
     }
 };
 
-class AddSpawn : public Command
+class AddSpawn : public ProgramApi::Command
 {
 public:
-    AddSpawn () : Command (gPlaceSpawnCommandDef,gPlaceSpawnOptions)
+    AddSpawn () : ProgramApi::Command (gPlaceSpawnCommandDef,gPlaceSpawnOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, Arguments args )
+    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
     {
         bool ok = client->AddSpawn ( args["room"].get<std::string> (),args["posX"].get<std::string> (),args["posY"].get<std::string> () );
         if ( ! ok )
@@ -448,7 +449,7 @@ int main ( int argc, char** argv )
 {
     int index = 1;
     ServerOptions server;
-    Command::Arguments serverOptions = server.parseArgs ( index, argc, argv );
+    ProgramApi::ArgumentParser::Arguments serverOptions = server.parseArgs ( index, argc, argv );
 
     std::shared_ptr < ScreepsApi::Web::Client > web (
         new WebClient ( serverOptions["serverIP"].get<std::string>()+":"+serverOptions["serverPort"].get<std::string>() )
@@ -466,22 +467,22 @@ int main ( int argc, char** argv )
     std::string command = argv [ index ]; index ++;
     if ( command == "pull" )
     {
-        Command::Arguments args = gPullCommand.parseArgs ( index, argc, argv );
+        ProgramApi::ArgumentParser::Arguments args = gPullCommand.parseArgs ( index, argc, argv );
         gPullCommand.process (client, args);
     }
     else if ( command == "push" )
     {
-        Command::Arguments args = gPushCommand.parseArgs ( index, argc, argv );
+        ProgramApi::ArgumentParser::Arguments args = gPushCommand.parseArgs ( index, argc, argv );
         gPushCommand.process (client, args);
     }
     else if ( command == "console" )
     {
-        Command::Arguments args = gConsoleCommand.parseArgs ( index, argc, argv );
+        ProgramApi::ArgumentParser::Arguments args = gConsoleCommand.parseArgs ( index, argc, argv );
         gConsoleCommand.process (client, args);
     }
     else if ( command == "spawn" )
     {
-        Command::Arguments args = gAddSpawnCommand.parseArgs ( index, argc, argv );
+        ProgramApi::ArgumentParser::Arguments args = gAddSpawnCommand.parseArgs ( index, argc, argv );
         gAddSpawnCommand.process (client, args);
     }
     return 0;
