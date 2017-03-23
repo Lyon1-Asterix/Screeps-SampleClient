@@ -292,6 +292,9 @@ nlohmann::json gPlaceSpawnCommandDef = {
         { "processor", "Spawn" },
         { "help", "send javascript code to place a spawn" }
     };
+
+std::shared_ptr < ScreepsApi::Api > client;
+
 class ServerOptions : public ProgramApi::ArgumentParser
 {
 public:
@@ -306,7 +309,7 @@ public:
     Pull () : ProgramApi::Command (gPullCommandDef,gPullOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
+    virtual bool process ( ProgramApi::ArgumentParser::Arguments args )
     {
         fs::path directory = args["output"].get<std::string> ();
         if (fs::exists(directory))
@@ -345,7 +348,7 @@ public:
     Push () : ProgramApi::Command (gPushCommandDef,gPushOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
+    virtual bool process ( ProgramApi::ArgumentParser::Arguments args )
     {
         fs::path directory = args["input"].get<std::string> ();
         if (!fs::exists(directory)) error ( "specified input does not exists" );
@@ -414,7 +417,7 @@ public:
     Console () : ProgramApi::Command (gConsoleCommandDef,gConsoleOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
+    virtual bool process ( ProgramApi::ArgumentParser::Arguments args )
     {
         bool ok = client->Console ( args["command"].get<std::string> () );
         if ( ! ok )
@@ -430,7 +433,7 @@ public:
     AddSpawn () : ProgramApi::Command (gPlaceSpawnCommandDef,gPlaceSpawnOptions)
     {
     }
-    virtual bool process ( std::shared_ptr < ScreepsApi::Api > client, ProgramApi::ArgumentParser::Arguments args )
+    virtual bool process ( ProgramApi::ArgumentParser::Arguments args )
     {
         bool ok = client->AddSpawn ( args["room"].get<std::string> (),args["posX"].get<std::string> (),args["posY"].get<std::string> () );
         if ( ! ok )
@@ -455,7 +458,7 @@ int main ( int argc, char** argv )
         new WebClient ( serverOptions["serverIP"].get<std::string>()+":"+serverOptions["serverPort"].get<std::string>() )
     );
     ScreepsApi::ApiManager::Instance ().initialize ( web, NULL );
-    std::shared_ptr < ScreepsApi::Api > client = ScreepsApi::ApiManager::Instance ().getApi ();
+    client = ScreepsApi::ApiManager::Instance ().getApi ();
     bool ok = client->Signin ( serverOptions["username"], serverOptions["password"] );
     if ( ! ok ) {
         std::cerr << "Error: cannot connect/signin to the server" << std::endl;
@@ -468,22 +471,23 @@ int main ( int argc, char** argv )
     if ( command == "pull" )
     {
         ProgramApi::ArgumentParser::Arguments args = gPullCommand.parseArgs ( index, argc, argv );
-        gPullCommand.process (client, args);
+        gPullCommand.process (args);
     }
     else if ( command == "push" )
     {
         ProgramApi::ArgumentParser::Arguments args = gPushCommand.parseArgs ( index, argc, argv );
-        gPushCommand.process (client, args);
+        gPushCommand.process (args);
     }
     else if ( command == "console" )
     {
         ProgramApi::ArgumentParser::Arguments args = gConsoleCommand.parseArgs ( index, argc, argv );
-        gConsoleCommand.process (client, args);
+        std::cout << args.dump () << std::endl;
+        gConsoleCommand.process (args);
     }
     else if ( command == "spawn" )
     {
         ProgramApi::ArgumentParser::Arguments args = gAddSpawnCommand.parseArgs ( index, argc, argv );
-        gAddSpawnCommand.process (client, args);
+        gAddSpawnCommand.process (args);
     }
     return 0;
 }
