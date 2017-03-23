@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include <boost/filesystem.hpp>
@@ -20,6 +21,9 @@ namespace fs = boost::filesystem;
  *
  */
 
+ extern void ReplaceStringInPlace(std::string& subject, const std::string& search,
+                          const std::string& replace);
+/*
 void ReplaceStringInPlace(std::string& subject, const std::string& search,
                           const std::string& replace) {
     size_t pos = 0;
@@ -28,6 +32,7 @@ void ReplaceStringInPlace(std::string& subject, const std::string& search,
          pos += replace.length();
     }
 }
+*/
 std::string toString ( std::istream& stream )
 {
     /**/
@@ -348,7 +353,6 @@ public:
         {
             error ( "code pull request thrown an error" );
         }
-        //V12::CodeBranch branch = V12::Data::Get ().m_code.m_branches[args["branch"].get<std::string>()];
         std::map < std::string, std::string > dirContent;
         for (auto&& x : fs::directory_iterator(directory))
         {
@@ -376,38 +380,24 @@ public:
         for ( auto it : updModules ) std::cout << "* [" << (it) << "]" << std::endl;
         for ( auto it : newModules ) std::cout << "+ [" << (it) << "]" << std::endl;
         for ( auto it : delModules ) std::cout << "- [" << (it) << "]" << std::endl;
-        //V12::CodeBranch newBranch;
-        //newBranch.m_branch = branch.m_branch;
         std::map < std::string, std::string > modules;
         for ( auto it : updModules ) {
-            //V12::CodeModule module;
-            //module.m_name = it;
-            //module.m_content = dirContent[it];
-            //newBranch.m_modules [it] = module;
             modules[it]=dirContent[it];
         }
         if ( args["addNewFiles"].get<bool>() )
         {
             for ( auto it : newModules ) {
-                //V12::CodeModule module;
-                //module.m_name = it;
-                //module.m_content = dirContent[it];
-                //newBranch.m_modules [it] = module;
                 modules[it]=dirContent[it];
             }
         }
         if ( ! args["removeOldFiles"].get<bool>() )
         {
             for ( auto it : delModules ) {
-                //V12::CodeModule module;
-                //module.m_name = it;
                 std::string content = branch [ "modules" ][it].get < std::string > ();
                 ReplaceStringInPlace ( content, "\\n", "\n" );
-                //newBranch.m_modules [it] = module;
                 modules[it]=content;
             }
         }
-        //V12::Data::Get ().m_code.m_branches[args["branch"].get<std::string>()] = newBranch;
         bool ok = client->PushCode ( args["branch"].get<std::string> (), modules );
         if ( ! ok )
         {

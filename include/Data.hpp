@@ -8,8 +8,6 @@
 
 #include "nlohmann/json.hpp"
 
-namespace V12 {
-
 class CodeModule
 {
 public:
@@ -123,7 +121,5 @@ public:
     int m_port;
     std::string m_socketPath;
 };
-
-}
 
 #endif

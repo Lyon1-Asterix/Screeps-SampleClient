@@ -1,6 +1,4 @@
-#include "Api-V12/Data.hpp"
-
-namespace V12 {
+#include "Data.hpp"
 
 void ReplaceStringInPlace(std::string& subject, const std::string& search,
                           const std::string& replace) {
@@ -183,5 +181,3 @@ const User& Data::getUser () { m_userModified = false; return m_user; }
 bool Data::isRoomModified () { return m_roomModified; }
 void Data::setRoom (nlohmann::json data) { /*m_inspectedRoom = data;*/ m_room.FromJSON ( data ); m_roomModified = true; }
 const Room& Data::getRoom () { m_roomModified = false; return m_room; }
-
-}
