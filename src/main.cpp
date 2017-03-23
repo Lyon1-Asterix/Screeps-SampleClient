@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <thread>
 
 #include <boost/filesystem.hpp>
 
@@ -24,16 +25,7 @@ namespace fs = boost::filesystem;
 
  extern void ReplaceStringInPlace(std::string& subject, const std::string& search,
                           const std::string& replace);
-/*
-void ReplaceStringInPlace(std::string& subject, const std::string& search,
-                          const std::string& replace) {
-    size_t pos = 0;
-    while ((pos = subject.find(search, pos)) != std::string::npos) {
-         subject.replace(pos, search.length(), replace);
-         pos += replace.length();
-    }
-}
-*/
+
 std::string toString ( std::istream& stream )
 {
     /**/
@@ -90,31 +82,6 @@ public:
     }
 protected:
     SimpleWeb::Client<SimpleWeb::HTTP> m_web;
-};
-
-class WebsocketClient : public ScreepsApi::Web::Socket
-{
-public:
-    WebsocketClient ( std::string host_port_path ) : m_socket ( host_port_path ) {}
-    virtual void connect ()
-    {
-        m_socket.start ();
-    }
-    virtual void close()
-    {
-        m_socket.stop ();
-    }
-    virtual ScreepsApi::Web::Reply send ( std::string message )
-    {
-    }
-    virtual void subscribe ( std::string message, std::function<void(ScreepsApi::Web::Reply)> callback )
-    {
-    }
-    virtual void unsubscribe ( std::string message, std::function<void(ScreepsApi::Web::Reply)> callback )
-    {
-    }
-protected:
-    SimpleWeb::SocketClient<SimpleWeb::WS> m_socket;
 };
 
 /*
@@ -482,7 +449,6 @@ int main ( int argc, char** argv )
     int index = 1;
     ServerOptions server;
     Command::Arguments serverOptions = server.parseArgs ( index, argc, argv );
-    //if ( index == argc ) usage ( argc, argv, "no command defined" );
 
     std::shared_ptr < ScreepsApi::Web::Client > web (
         new WebClient ( serverOptions["serverIP"].get<std::string>()+":"+serverOptions["serverPort"].get<std::string>() )
@@ -494,6 +460,8 @@ int main ( int argc, char** argv )
         std::cerr << "Error: cannot connect/signin to the server" << std::endl;
         exit ( -1 );
     }
+    while ( ! client->initialized () )
+        std::this_thread::sleep_for ( std::chrono::milliseconds ( 5 ) );
     std::cout << "signed in " << ok << std::endl;
     std::string command = argv [ index ]; index ++;
     if ( command == "pull" )
