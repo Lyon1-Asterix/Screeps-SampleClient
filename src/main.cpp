@@ -6,8 +6,6 @@
 #include "ScreepsApi/ApiManager.hpp"
 #include "ScreepsApi/Web.hpp"
 
-#include "ScreepsApiV12/Data.hpp"
-
 #include "simple-web-server/client_http.hpp"
 
 #include "nlohmann/json.hpp"
@@ -18,10 +16,18 @@ namespace fs = boost::filesystem;
 
 /*
  *
- * encapsulation of Web::Client inside a ScreepsApi::Web::Client
+ * string utilities
  *
  */
 
+void ReplaceStringInPlace(std::string& subject, const std::string& search,
+                          const std::string& replace) {
+    size_t pos = 0;
+    while ((pos = subject.find(search, pos)) != std::string::npos) {
+         subject.replace(pos, search.length(), replace);
+         pos += replace.length();
+    }
+}
 std::string toString ( std::istream& stream )
 {
     /**/
@@ -32,6 +38,12 @@ std::string toString ( std::istream& stream )
     ret.append(buffer, stream.gcount());
     return ret;
 }
+
+/*
+ *
+ * encapsulation of Web::Client inside a ScreepsApi::Web::Client
+ *
+ */
 
 class WebClient : public ScreepsApi::Web::Client
 {
@@ -302,18 +314,19 @@ public:
             boost::system::error_code ec;
             if ( fs::create_directories ( directory, ec ) ) error ( ec.message () );
         }
-        bool ok = client->PullCode ( args["branch"].get<std::string> () );
-        if ( ! ok )
+        nlohmann::json branch = client->PullCode ( args["branch"].get<std::string> () );
+        if ( branch.is_null () )
         {
             error ( "code pull request thrown an error" );
         }
-        V12::CodeBranch branch = V12::Data::Get ().m_code.m_branches[args["branch"]];
-        for ( auto it = branch.m_modules.begin () ; it != branch.m_modules.end () ; ++ it )
+        for (nlohmann::json::iterator it = branch [ "modules" ].begin(); it != branch [ "modules" ].end(); ++it)
         {
-            std::string fname = args["output"].get < std::string > () + "/" + it->first + ".js";
-            std::cout << it->first << std::endl;
+            std::string name = it.key();
+            std::string code = it.value();
+            ReplaceStringInPlace ( code, "\\n", "\n" );
+            std::string fname = args["output"].get < std::string > () + "/" + name + ".js";
             std::ofstream stream ( fname );
-            stream << it->second.m_content;
+            stream << code;
             stream.close ();
         }
     }
@@ -330,12 +343,12 @@ public:
         fs::path directory = args["input"].get<std::string> ();
         if (!fs::exists(directory)) error ( "specified input does not exists" );
         if (! fs::is_directory(directory) ) error ( "specified input is not a directory ["+directory.filename().string()+"]" );
-        bool ok = client->PullCode ( args["branch"].get<std::string> () );
-        if ( ! ok )
+        nlohmann::json branch = client->PullCode ( args["branch"].get<std::string> () );
+        if ( branch.is_null () )
         {
             error ( "code pull request thrown an error" );
         }
-        V12::CodeBranch branch = V12::Data::Get ().m_code.m_branches[args["branch"].get<std::string>()];
+        //V12::CodeBranch branch = V12::Data::Get ().m_code.m_branches[args["branch"].get<std::string>()];
         std::map < std::string, std::string > dirContent;
         for (auto&& x : fs::directory_iterator(directory))
         {
@@ -352,43 +365,50 @@ public:
         std::vector < std::string > delModules;
         std::vector < std::string > updModules;
         for ( auto it : dirContent ) {
-            if ( branch.m_modules.find ( it.first ) == branch.m_modules.end () ) newModules.push_back ( it.first );
+            if ( branch [ "modules" ].find ( it.first ) == branch [ "modules" ].end () ) newModules.push_back ( it.first );
             else updModules.push_back ( it.first );
         }
-        for ( auto it : branch.m_modules ) {
-            if ( dirContent.find ( it.first ) == dirContent.end () ) delModules.push_back ( it.first );
+        for (nlohmann::json::iterator it = branch [ "modules" ].begin(); it != branch [ "modules" ].end(); ++it)
+        {
+            std::string name = it.key();
+            if ( dirContent.find ( name ) == dirContent.end () ) delModules.push_back ( name );
         }
         for ( auto it : updModules ) std::cout << "* [" << (it) << "]" << std::endl;
         for ( auto it : newModules ) std::cout << "+ [" << (it) << "]" << std::endl;
         for ( auto it : delModules ) std::cout << "- [" << (it) << "]" << std::endl;
-        V12::CodeBranch newBranch;
-        newBranch.m_branch = branch.m_branch;
+        //V12::CodeBranch newBranch;
+        //newBranch.m_branch = branch.m_branch;
+        std::map < std::string, std::string > modules;
         for ( auto it : updModules ) {
-            V12::CodeModule module;
-            module.m_name = it;
-            module.m_content = dirContent[it];
-            newBranch.m_modules [it] = module;
+            //V12::CodeModule module;
+            //module.m_name = it;
+            //module.m_content = dirContent[it];
+            //newBranch.m_modules [it] = module;
+            modules[it]=dirContent[it];
         }
         if ( args["addNewFiles"].get<bool>() )
         {
             for ( auto it : newModules ) {
-                V12::CodeModule module;
-                module.m_name = it;
-                module.m_content = dirContent[it];
-                newBranch.m_modules [it] = module;
+                //V12::CodeModule module;
+                //module.m_name = it;
+                //module.m_content = dirContent[it];
+                //newBranch.m_modules [it] = module;
+                modules[it]=dirContent[it];
             }
         }
         if ( ! args["removeOldFiles"].get<bool>() )
         {
             for ( auto it : delModules ) {
-                V12::CodeModule module;
-                module.m_name = it;
-                module.m_content = branch.m_modules[it].m_content;
-                newBranch.m_modules [it] = module;
+                //V12::CodeModule module;
+                //module.m_name = it;
+                std::string content = branch [ "modules" ][it].get < std::string > ();
+                ReplaceStringInPlace ( content, "\\n", "\n" );
+                //newBranch.m_modules [it] = module;
+                modules[it]=content;
             }
         }
-        V12::Data::Get ().m_code.m_branches[args["branch"].get<std::string>()] = newBranch;
-        ok = client->PushCode ( args["branch"].get<std::string> () );
+        //V12::Data::Get ().m_code.m_branches[args["branch"].get<std::string>()] = newBranch;
+        bool ok = client->PushCode ( args["branch"].get<std::string> (), modules );
         if ( ! ok )
         {
             error ( "code push request thrown an error" );
@@ -443,7 +463,7 @@ int main ( int argc, char** argv )
     std::shared_ptr < ScreepsApi::Web::Client > web (
         new WebClient ( serverOptions["serverIP"].get<std::string>()+":"+serverOptions["serverPort"].get<std::string>() )
     );
-    ScreepsApi::ApiManager::Instance ().initialize ( web );
+    ScreepsApi::ApiManager::Instance ().initialize ( web, NULL );
     std::shared_ptr < ScreepsApi::Api > client = ScreepsApi::ApiManager::Instance ().getApi ();
     bool ok = client->Signin ( serverOptions["username"], serverOptions["password"] );
     if ( ! ok ) {
